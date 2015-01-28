@@ -1,0 +1,6 @@
+.rebar
+.eunit
+*.o
+*.d
+ebin
+priv/euds_nifs.so
