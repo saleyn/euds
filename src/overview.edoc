@@ -14,7 +14,7 @@ modules that don't provide support for UDS sockets out of the box.
 
 <ul>
 <li>Project's repository: [https://github.com/saleyn/euds]</li>
-<li>Git clone command: `git clone https://github.com/saleyn/euds.git'</li>
+<li>Git clone command: <em>git clone https://github.com/saleyn/euds.git</em></li>
 <li>Documentation: http://saleyn.github.com/euds</li>
 </ul>
 
@@ -22,7 +22,7 @@ modules that don't provide support for UDS sockets out of the box.
 
 1. Apply the following patch to the latest Erlang release:
    https://github.com/saleyn/otp/compare/uds.patch
-2. Ensure you have a local installation of `rebar`.
+2. Ensure you have a local installation of <em>rebar</em>.
 3. git clone https://github.com/saleyn/euds.git
 4. make
 
