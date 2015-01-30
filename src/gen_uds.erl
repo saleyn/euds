@@ -188,7 +188,7 @@ uds_tcp_test() ->
     File = "/tmp/test_euds.sock",
     Pid  = self(),
     CPid = spawn_link(fun() ->
-        ?assertEqual(ok, receive ready -> ok after 10000 -> timeout end),
+        ?assertEqual(ok, receive ready -> ok after 1000 -> timeout end),
         {ok, S} = gen_uds:connect(File, [stream]),
         gen_tcp:send(S, <<"abc">>),
         timer:sleep(10), % Prevent both packets from being merged in one
@@ -203,27 +203,27 @@ uds_tcp_test() ->
         {ok, CS} = gen_tcp:accept(S),
         inet:setopts(CS, [{active, once}]),
         ?assertMatch({tcp, _Port, "abc"},
-            receive Msg -> Msg after 3000 -> timeout end),
+            receive Msg -> Msg after 1000 -> timeout end),
         inet:setopts(CS, [{active, false}]),
-        ?assertEqual({ok, "efg"}, gen_tcp:recv(CS, 0)),
+        ?assertEqual({ok, "efg"}, gen_tcp:recv(CS, 0, 1000)),
         ?assertEqual(ok, gen_tcp:close(CS)),
         ?assertEqual(ok, gen_tcp:close(S)),
         Pid  ! {server, ok}
     end),
 
-    receive {server, ok} -> ok
-    after   5000         -> throw(no_response_from_server)
-    end,
+    ?assertMatch(ok,
+       receive {server, ok} -> ok
+       after   2000         -> timeout end),
 
-    receive {client, ok} -> ok
-    after   5000         -> throw(no_response_from_client)
-    end.
+    ?assertMatch(ok,
+       receive {client, ok} -> ok
+       after   2000         -> timeout end).
 
 uds_udp_test() ->
     File = "/tmp/test_euds.sock",
     Pid  = self(),
     CPid = spawn_link(fun() ->
-        ?assertEqual(ok, receive ready -> ok after 10000 -> timeout end),
+        ?assertEqual(ok, receive ready -> ok after 1000 -> timeout end),
         {ok, S} = gen_uds:connect(File, [dgram]),
         gen_uds:send(S, <<"abc">>),
         gen_uds:send(S, <<"efg">>),
@@ -237,21 +237,21 @@ uds_udp_test() ->
         % Active socket test
         inet:setopts(S, [{active, once}]),
         ?assertMatch({udp, _Port, File, 0, "abc"},
-            receive Msg -> Msg after 3000 -> timeout end),
+            receive Msg -> Msg after 1000 -> timeout end),
         % Passive socket test
         inet:setopts(S, [{active, false}]),
-        ?assertEqual({ok, {File, 0, "efg"}}, gen_udp:recv(S, 0, 3000)),
+        ?assertEqual({ok, {File, 0, "efg"}}, gen_udp:recv(S, 0, 1000)),
         ?assertEqual(ok, gen_udp:close(S)),
         Pid  ! {server, ok}
     end),
 
-    receive {server, ok} -> ok
-    after   5000         -> throw(no_response_from_server)
-    end,
+    ?assertMatch(ok,
+       receive {server, ok} -> ok
+       after   2000         -> timeout end),
 
-    receive {client, ok} -> ok
-    after   5000         -> throw(no_response_from_client)
-    end.
+    ?assertMatch(ok,
+       receive {client, ok} -> ok
+       after   2000         -> timeout end).
 
 -endif.
  
