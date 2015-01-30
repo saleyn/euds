@@ -16,27 +16,61 @@ to erlang-patches@erlang.org mailing list for review.
 Usage:
 ======
 
-    % Server:
-    1> file:delete("/tmp/test.sock").
-    ok
-    2> {ok, S} = gen_uds:listen("/tmp/test.sock", [{type, stream}]).
-    {ok,#Port<0.980>}
-    3> {ok, CS} = gen_uds:accept(S).
-    {ok,#Port<0.981>}
-    4> inet:setopts(CS, [{active, false}]).
-    ok
-    5> gen_tcp:recv(CS, 0).
-    {ok,"abc"}
-    6> gen_tcp:close(CS).
-    ok
-    7> gen_tcp:close(S).
-    ok
+### TCP example ###
 
-    % Client:
-    1> {ok, S} = gen_uds:connect("/tmp/test.sock", [{type, stream}]).
-    {ok,#Port<0.949>}
-    2> gen_tcp:send(S, <<"abc">>).
-    ok
-    3> gen_tcp:close(S).
-    ok
+```erlang
+% TCP Unix Domain Socket Server:
+1> file:delete("/tmp/test.sock").
+ok
+2> {ok, S} = gen_uds:listen("/tmp/test.sock", [stream]).
+{ok,#Port<0.980>}
+3> {ok, CS} = gen_uds:accept(S).
+{ok,#Port<0.981>}
+4> inet:setopts(CS, [{active, false}]).
+ok
+5> gen_tcp:recv(CS, 0).
+{ok,"abc"}
+6> gen_tcp:close(CS).
+ok
+7> gen_tcp:close(S).
+ok
+
+% TCP Unix Domain Socket Client:
+1> {ok, S} = gen_uds:connect("/tmp/test.sock", [stream]).
+{ok,#Port<0.949>}
+2> gen_tcp:send(S, <<"abc">>).
+ok
+3> gen_tcp:close(S).
+ok
+```
+
+### UDP example ###
+
+```erlang
+% UDP Unix Domain Socket Server:
+1> file:delete("/tmp/test.sock").
+ok
+2> {ok, S} = gen_uds:listen("/tmp/test.sock", [dgram]).
+{ok,#Port<0.980>}
+3> inet:setopts(S, [{active, once}]).
+4> receive Msg -> Msg end,
+{udp,#Port<0.980>,"/tmp/test.sock",0,"abc"}
+5> inet:setopts(S, [{active, false}]).
+ok
+6> gen_udp:recv(S, 0).
+{ok,{"/tmp/test.sock", 0, "efg"}}
+7> gen_udp:close(S).
+ok
+
+% UDP Unix Domain Socket Client:
+1> {ok, S} = gen_uds:connect("/tmp/test.sock", [dgram]).
+{ok,#Port<0.949>}
+2> gen_tcp:send(S, <<"abc">>).
+ok
+3> gen_tcp:send(S, <<"efg">>).
+ok
+4> gen_tcp:close(S).
+ok
+```
+
 
