@@ -13,8 +13,18 @@ distribution to be patched in order for this project to work. The patch can
 be found here: https://github.com/saleyn/otp/compare/uds.  It was submitted
 to erlang-patches@erlang.org mailing list for review.
 
-Usage:
-======
+## Author ##
+
+Serge Aleynikov <saleyn at gmail dot com>
+
+## Installation: ##
+
+1. Apply the following patch to the latest Erlang release:
+   https://github.com/saleyn/otp/compare/uds.patch
+2. git clone https://github.com/saleyn/euds.git
+3. make
+
+## Usage: ##
 
 ### TCP example ###
 
