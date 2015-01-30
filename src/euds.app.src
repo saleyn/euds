@@ -1,9 +1,0 @@
-{application, euds,
- [
-  {description,  ""},
-  {vsn,          "1.0"},
-  {modules,      [gen_uds]},
-  {registered,   []},
-  {applications, [kernel, stdlib]},
-  {env, []}
- ]}.

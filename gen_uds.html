@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Module gen_uds</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module gen_uds</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Unix Domain Socket support.
+<p>Copyright © 2015 Serge Aleynikov</p>
+
+<p><b>Authors:</b> Serge Aleynikov (<a href="mailto:saleyn@gmail.com"><tt>saleyn@gmail.com</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2>Unix Domain Socket support
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-listen_options">listen_options()</a></h3>
+<p><tt>listen_options() = [<a href="gen_tcp.html#type-listen_option">gen_tcp:listen_option()</a> | <a href="gen_udp.html#type-listen_option">gen_udp:listen_option()</a>]</tt></p>
+
+
+<h3 class="typedecl"><a name="type-socket">socket()</a></h3>
+<p><tt>socket() = <a href="gen_tcp.html#type-socket">gen_tcp:socket()</a></tt></p>
+
+
+<h3 class="typedecl"><a name="type-uds_option">uds_option()</a></h3>
+<p><tt>uds_option() = stream | dgram | <a href="gen_tcp.html#type-option">gen_tcp:option()</a> | <a href="gen_udp.html#type-option">gen_udp:option()</a></tt></p>
+
+
+<h3 class="typedecl"><a name="type-uds_options">uds_options()</a></h3>
+<p><tt>uds_options() = [<a href="#type-uds_option">uds_option()</a>]</tt></p>
+
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#accept-1">accept/1</a></td><td>Accepts an incoming connection request on a listen socket.</td></tr>
+<tr><td valign="top"><a href="#accept-2">accept/2</a></td><td>Accepts an incoming connection request on a listen socket.</td></tr>
+<tr><td valign="top"><a href="#async_accept-1">async_accept/1</a></td><td>An asynchronous version of <code>accept/1</code>.</td></tr>
+<tr><td valign="top"><a href="#close-1">close/1</a></td><td>Close a UDS socket.</td></tr>
+<tr><td valign="top"><a href="#connect-2">connect/2</a></td><td>Connects to a server on UDS socket associated with the <code>Filename</code> on the local host.</td></tr>
+<tr><td valign="top"><a href="#init-0">init/0</a></td><td>Initialize UDS library.</td></tr>
+<tr><td valign="top"><a href="#listen-2">listen/2</a></td><td>Sets up a UNIX Domain socket to listen on the <code>Filename</code> on the local host.</td></tr>
+<tr><td valign="top"><a href="#send-2">send/2</a></td><td>Close a UDS socket.</td></tr>
+<tr><td valign="top"><a href="#set_sockopt-2">set_sockopt/2</a></td><td>Set socket options and register <code>Sock</code> with inet driver.</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="accept-1">accept/1</a></h3>
+<div class="spec">
+<p><tt>accept(LSock::<a href="#type-socket">socket()</a>) -&gt; {ok, <a href="#type-socket">socket()</a>} | {error, any()}</tt><br></p>
+</div><p>Accepts an incoming connection request on a listen socket. Socket must be a
+       socket returned from <code>listen/3</code>.  This function blocks indefinitely until a
+       client connection is established.</p>
+
+<h3 class="function"><a name="accept-2">accept/2</a></h3>
+<div class="spec">
+<p><tt>accept(LSock::<a href="#type-socket">socket()</a>, Timeout::integer() | infinity) -&gt; {ok, <a href="#type-socket">socket()</a>} | {error, any()}</tt><br></p>
+</div><p>Accepts an incoming connection request on a listen socket. Socket must be a
+       socket returned from <code>listen/3</code>. Timeout specifies a timeout value in ms.</p>
+
+<h3 class="function"><a name="async_accept-1">async_accept/1</a></h3>
+<div class="spec">
+<p><tt>async_accept(LSock::<a href="#type-socket">socket()</a>) -&gt; {ok, Ref::integer()} | {error, any()}</tt><br></p>
+</div><p>An asynchronous version of <code>accept/1</code>.  The caller will receive
+       <code>{inet_async, LSock, Ref::integer(), {ok, CliSocket::socket()}}</code> or
+       <code>{inet_async, ListSock, Ref, {error, Reason}}</code> upon successful/unsuccessful
+       client connection.  The function needs to be called again in order to
+       begin asynchronous accept of the next client socket.  When a successful
+       socket message <code>{ok, CliSocket::socket()}</code> is received, the server must
+       call <code>set_sockopt/2</code> function in order to register the socket with the inet
+       driver.</p>
+
+<h3 class="function"><a name="close-1">close/1</a></h3>
+<div class="spec">
+<p><tt>close(Sock::<a href="gen_uds.html#type-socket">gen_uds:socket()</a>) -&gt; ok</tt><br></p>
+</div><p>Close a UDS socket.</p>
+
+<h3 class="function"><a name="connect-2">connect/2</a></h3>
+<div class="spec">
+<p><tt>connect(Filename::string(), Options::<a href="#type-uds_options">uds_options()</a>) -&gt; {ok, <a href="gen_tcp.html#type-socket">gen_tcp:socket()</a> | <a href="gen_udp.html#type-socket">gen_udp:socket()</a>} | {error, any()}</tt><br></p>
+</div><p>Connects to a server on UDS socket associated with the <code>Filename</code> on the local host.
+       See <code>gen_tcp:connect/2</code> and <code>inet:setopts/2</code> for a list of available options.</p>
+
+<h3 class="function"><a name="init-0">init/0</a></h3>
+<div class="spec">
+<p><tt>init() -&gt; term()</tt><br></p>
+</div><p>Initialize UDS library</p>
+
+<h3 class="function"><a name="listen-2">listen/2</a></h3>
+<div class="spec">
+<p><tt>listen(Filename::string(), Options::<a href="#type-listen_options">listen_options()</a>) -&gt; {ok, <a href="gen_uds.html#type-socket">gen_uds:socket()</a>} | {error, any()}</tt><br></p>
+</div><p>Sets up a UNIX Domain socket to listen on the <code>Filename</code> on the local host.
+       See <code>gen_tcp:listen/2</code> and <code>inet:setopts/2</code> for a list of available options.</p>
+
+<h3 class="function"><a name="send-2">send/2</a></h3>
+<div class="spec">
+<p><tt>send(Sock::<a href="gen_uds.html#type-socket">gen_uds:socket()</a>, Data::binary()) -&gt; ok</tt><br></p>
+</div><p>Close a UDS socket.</p>
+
+<h3 class="function"><a name="set_sockopt-2">set_sockopt/2</a></h3>
+<div class="spec">
+<p><tt>set_sockopt(LSock::<a href="#type-socket">socket()</a>, Sock::<a href="#type-socket">socket()</a>) -&gt; ok | {error, any()}</tt><br></p>
+</div><p>Set socket options and register <code>Sock</code> with inet driver.</p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Jan 29 2015, 21:52:14.</i></p>
+</body>
+</html>
