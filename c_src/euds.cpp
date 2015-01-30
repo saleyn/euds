@@ -108,16 +108,16 @@ static int sock_open(ErlNifEnv* env, ERL_NIF_TERM list) {
     bool stream = true;
     bool reuse  = false;
 
-	if (!enif_is_list(env, list))
+    if (!enif_is_list(env, list))
         return enif_make_badarg(env);
 
     if (!decode_flags(env, list, stream, reuse))
         return enif_make_badarg(env);
 
- 	int fd = socket(PF_UNIX, stream ? SOCK_STREAM : SOCK_DGRAM, 0);
+    int fd = socket(PF_UNIX, stream ? SOCK_STREAM : SOCK_DGRAM, 0);
 
     if (fd < 0)
-		return fd;
+        return fd;
 
     if (reuse && setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
         int err = errno;
@@ -132,59 +132,59 @@ static int sock_open(ErlNifEnv* env, ERL_NIF_TERM list) {
 // connect(Addr::list(), Options) -> {ok, FD::integer()} | {error, Reason}
 //  Options :: [{type, stream | dgram} | reuseaddr | {reuseaddr, boolean()}]
 static ERL_NIF_TERM sock_connect(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-	struct sockaddr_un addr;
-	char path[sizeof(addr.sun_path)];
+    struct sockaddr_un addr;
+    char path[sizeof(addr.sun_path)];
 
-	if (argc != 2 || !enif_is_list(env,argv[0]) || !enif_is_list(env,argv[1]))
+    if (argc != 2 || !enif_is_list(env,argv[0]) || !enif_is_list(env,argv[1]))
         return enif_make_badarg(env);
 
-	memset(&addr, 0, sizeof(struct sockaddr_un));
-	memset(path,  0, sizeof(addr.sun_path));
-	enif_get_string(env, argv[0], path, sizeof(addr.sun_path)-1, ERL_NIF_LATIN1);
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    memset(path,  0, sizeof(addr.sun_path));
+    enif_get_string(env, argv[0], path, sizeof(addr.sun_path)-1, ERL_NIF_LATIN1);
 
     int fd = sock_open(env, argv[1]);
 
     if (fd < 0)
-		return enif_make_tuple2(env, am_error, describe_error(env, errno));
+        return enif_make_tuple2(env, am_error, describe_error(env, errno));
 
-	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
-	if (connect(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)))
-		return enif_make_tuple2(env, am_error, describe_error(env, errno));
+    addr.sun_family = AF_UNIX;
+    snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
+    if (connect(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)))
+        return enif_make_tuple2(env, am_error, describe_error(env, errno));
 
-	return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
+    return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
 }
 
 static ERL_NIF_TERM sock_bind(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-	struct sockaddr_un addr;
-	char path[sizeof(addr.sun_path)];
+    struct sockaddr_un addr;
+    char path[sizeof(addr.sun_path)];
 
-	if (argc != 2 || !enif_is_list(env,argv[0]) || !enif_is_list(env,argv[1]))
+    if (argc != 2 || !enif_is_list(env,argv[0]) || !enif_is_list(env,argv[1]))
         return enif_make_badarg(env);
 
-	memset(&addr, 0, sizeof(struct sockaddr_un));
-	memset(path,  0, sizeof(addr.sun_path));
-	enif_get_string(env, argv[0], path, sizeof(addr.sun_path)-1, ERL_NIF_LATIN1);
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    memset(path,  0, sizeof(addr.sun_path));
+    enif_get_string(env, argv[0], path, sizeof(addr.sun_path)-1, ERL_NIF_LATIN1);
 
     int fd = sock_open(env, argv[1]);
 
     if (fd < 0)
-		return enif_make_tuple2(env, am_error, describe_error(env, errno));
+        return enif_make_tuple2(env, am_error, describe_error(env, errno));
 
-	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
+    addr.sun_family = AF_UNIX;
+    snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
 
     if (bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) < 0)
         return enif_make_tuple2(env, am_error, describe_error(env, errno));
 
-	return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
+    return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
 }
 
 static ERL_NIF_TERM sock_send(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     int fd;
     ErlNifBinary bin;
 
-	if (argc != 2 ||
+    if (argc != 2 ||
         !enif_get_int(env, argv[0], &fd) ||
         !enif_inspect_binary(env,argv[1], &bin))
         return enif_make_badarg(env);
@@ -194,18 +194,18 @@ static ERL_NIF_TERM sock_send(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     if (rc != int(bin.size))
         return enif_make_tuple2(env, am_error, describe_error(env, errno));
 
-	return am_ok;
+    return am_ok;
 }
 
 static ERL_NIF_TERM sock_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-	int fd = 0;	
+    int fd = 0; 
 
-	if (argc != 1 || !enif_get_int(env, argv[0], &fd))
+    if (argc != 1 || !enif_get_int(env, argv[0], &fd))
         return enif_make_badarg(env);
 
     close(fd);
 
-	return am_ok;
+    return am_ok;
 }
 
 static int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
@@ -224,10 +224,10 @@ static int on_reload (ErlNifEnv* env, void**,         ERL_NIF_TERM) { return 0; 
 static int on_upgrade(ErlNifEnv* env, void**, void**, ERL_NIF_TERM) { return 0; }
 
 static ErlNifFunc nif_funcs[] = {
-	{"do_connect", 2, sock_connect},
-	{"do_bind",    2, sock_bind},
-	{"do_send",    2, sock_send},
-	{"do_close",   1, sock_close},
+    {"do_connect", 2, sock_connect},
+    {"do_bind",    2, sock_bind},
+    {"do_send",    2, sock_send},
+    {"do_close",   1, sock_close},
 };
 
 ERL_NIF_INIT(gen_uds, nif_funcs, &on_load, &on_reload, &on_upgrade, NULL)
