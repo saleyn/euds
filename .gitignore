@@ -4,3 +4,4 @@
 *.d
 ebin
 priv/euds_nifs.so
+doc/edoc-info
