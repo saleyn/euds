@@ -46,13 +46,13 @@ static ERL_NIF_TERM am_ok;
 static ERL_NIF_TERM am_error;
 static ERL_NIF_TERM am_true;
 static ERL_NIF_TERM am_false;
-static ERL_NIF_TERM am_type;
 static ERL_NIF_TERM am_stream;
 static ERL_NIF_TERM am_dgram;
 static ERL_NIF_TERM am_reuseaddr;
 
 static ERL_NIF_TERM sock_connect(ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sock_bind   (ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM sock_send   (ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sock_close  (ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
 
 bool decode_flags(ErlNifEnv* env, ERL_NIF_TERM list, bool& stream, bool& reuse)
@@ -64,13 +64,13 @@ bool decode_flags(ErlNifEnv* env, ERL_NIF_TERM list, bool& stream, bool& reuse)
     while (enif_get_list_cell(env, list, &head, &list)) {
         if (head == am_reuseaddr)
             reuse = true;
+        else if (head == am_stream)
+            stream = true;
+        else if (head == am_dgram)
+            stream = false;
         else if (enif_get_tuple(env, head, &arity, &tuple) && arity == 2) {
             if (tuple[0] == am_reuseaddr && (tuple[1] == am_true || tuple[1] == am_false))
                 reuse = tuple[1] == am_true;
-            else if ((tuple[0] == am_type) && (tuple[1] == am_stream))
-                stream = true;
-            else if ((tuple[0] == am_type) && (tuple[1] == am_dgram))
-                stream = false;
             else
                 return false;
         } else
@@ -180,6 +180,23 @@ static ERL_NIF_TERM sock_bind(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 	return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
 }
 
+static ERL_NIF_TERM sock_send(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    int fd;
+    ErlNifBinary bin;
+
+	if (argc != 2 ||
+        !enif_get_int(env, argv[0], &fd) ||
+        !enif_inspect_binary(env,argv[1], &bin))
+        return enif_make_badarg(env);
+
+    int rc = send(fd, bin.data, bin.size, 0);
+
+    if (rc != int(bin.size))
+        return enif_make_tuple2(env, am_error, describe_error(env, errno));
+
+	return am_ok;
+}
+
 static ERL_NIF_TERM sock_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 	int fd = 0;	
 
@@ -197,18 +214,21 @@ static int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     am_error     = enif_make_atom(env, "error");
     am_true      = enif_make_atom(env, "true");
     am_false     = enif_make_atom(env, "false");
-    am_type      = enif_make_atom(env, "type");
     am_stream    = enif_make_atom(env, "stream");
     am_dgram     = enif_make_atom(env, "dgram");
     am_reuseaddr = enif_make_atom(env, "reuseaddr");
     return 0;
 }
 
+static int on_reload (ErlNifEnv* env, void**,         ERL_NIF_TERM) { return 0; }
+static int on_upgrade(ErlNifEnv* env, void**, void**, ERL_NIF_TERM) { return 0; }
+
 static ErlNifFunc nif_funcs[] = {
 	{"do_connect", 2, sock_connect},
 	{"do_bind",    2, sock_bind},
+	{"do_send",    2, sock_send},
 	{"do_close",   1, sock_close},
 };
 
-ERL_NIF_INIT(gen_uds, nif_funcs, &on_load, NULL, NULL, NULL)
+ERL_NIF_INIT(gen_uds, nif_funcs, &on_load, &on_reload, &on_upgrade, NULL)
 

@@ -13,7 +13,7 @@
 -on_load(init/0).
 
 %% API
--export([init/0, connect/2, listen/2, close/1]).
+-export([init/0, connect/2, listen/2, close/1, send/2]).
 -export([accept/1, accept/2, async_accept/1, set_sockopt/2]).
 
 -ifdef(TEST).
@@ -21,7 +21,7 @@
 -endif.
 
 -type socket()         :: gen_tcp:socket().
--type uds_option()     :: {type, stream | dgram} |
+-type uds_option()     :: stream | dgram |
                           gen_tcp:option() | gen_udp:option().
 -type uds_options()    :: [uds_option()].
 -type listen_options() :: [gen_tcp:listen_option() | gen_udp:listen_option()].
@@ -52,18 +52,20 @@ init() ->
 -spec connect(string(), uds_options()) ->
     {ok, gen_tcp:socket()|gen_udp:socket()} | {error, any()}.
 connect(Filename, Options) when is_list(Filename), is_list(Options) ->
-    case do_connect(Filename, Options) of
-    {ok, FD} when is_integer(FD) ->
-        case gen_tcp:fdopen(FD, [local]) of
+    {UdsOpts, Opts} = split_opts(Options),
+    case do_connect(Filename, UdsOpts) of
+    {ok, FD} when is_integer(FD), FD >= 0 ->
+        {M,F} = mf(connect, UdsOpts),
+        case M:F(FD, [local | Opts]) of
         {ok,    Sock} -> ok;
-        {error, Sock} -> throw({error, inet:format_error(Sock)})
+        {error, Sock} -> throw({error, Sock})
         end,
 
         inet_db:register_socket(Sock, inet_tcp),
 
-        case prim_inet:setopts(Sock, proplists:delete(type, Options)) of
+        case prim_inet:setopts(Sock, Opts) of
         ok         -> {ok, Sock};
-        {error, E} -> {error, io_lib:format("setopts failed: ~s", [E])}
+        {error, E} -> {error, {setopts, E}}
         end;
     Error ->
         Error
@@ -73,33 +75,23 @@ connect(Filename, Options) when is_list(Filename), is_list(Options) ->
 %%      See `gen_tcp:listen/2' and `inet:setopts/2' for a list of available options.
 -spec listen(string(), listen_options()) -> {ok, gen_uds:socket()} | {error, any()}.
 listen(Filename, Options) when is_list(Filename), is_list(Options) ->
-    case do_bind(Filename, Options) of
-    {ok, FD} ->
-        case type(Options) of
-        {ok, M, F, Opts} when M =:= gen_tcp; M =:= gen_udp ->
-            case M:F(0, [{fd, FD}, local | Opts]) of
-            {ok,    LSock} -> {ok,    LSock};
-            {error, LSock} -> do_close(FD), {error, {fdopen, LSock}}
-            end;
-        Error ->
-            do_close(FD),
-            throw(Error)
+    {UdsOpts, Opts} = split_opts(Options),
+    case do_bind(Filename, UdsOpts) of
+    {ok, FD} when is_integer(FD), FD >= 0 ->
+        {M,F} = mf(listen, UdsOpts),
+        case M:F(0, [{fd, FD}, local | Opts]) of
+        {ok,    LSock} -> {ok, LSock};
+        {error, LSock} -> do_close(FD), {error, {fdopen, LSock}}
         end;
     Error ->
         Error
     end.
 
-type(Options) ->
-    case proplists:split(Options, [type]) of
-    {[[{type, stream}]], Opts} ->
-        {ok, gen_tcp, listen, Opts};
-    {[[{type, dgram}]], Opts} ->
-        {ok, gen_udp, open, Opts};
-    {[[{type, Type}]], _Opts} ->
-        {error, {invalid_type, Type}};
-    {[[]], Opts} ->
-        {ok, gen_tcp, listen, Opts}
-    end.
+%% @doc Close a UDS socket.
+-spec send(gen_uds:socket(), binary()) -> ok.
+send(Sock, Data) when is_port(Sock), is_binary(Data) ->
+    {ok, FD} = inet:getfd(Sock),
+    do_send(FD, Data).
 
 %% @doc Close a UDS socket.
 -spec close(gen_uds:socket()) -> ok.
@@ -135,9 +127,9 @@ async_accept(LSock) ->
 
 %% @doc Set socket options and register `Sock' with inet driver.
 -spec set_sockopt(LSock::socket(), Sock::socket()) -> ok | {error, any()}.
-set_sockopt(ListSock, CliSocket) ->
+set_sockopt(ListenSock, CliSocket) ->
     true = inet_db:register_socket(CliSocket, inet_tcp),
-    case prim_inet:getopts(ListSock, [active, nodelay, keepalive, delay_send]) of
+    case prim_inet:getopts(ListenSock, [active, nodelay, keepalive, delay_send]) of
     {ok, Opts} ->
         case prim_inet:setopts(CliSocket, Opts) of
         ok    -> ok;
@@ -148,7 +140,7 @@ set_sockopt(ListSock, CliSocket) ->
     end.
 
 %%%----------------------------------------------------------------------------
-%%% Internal functions implemented in C
+%%% Internal NIF functions implemented in C
 %%%----------------------------------------------------------------------------
 -spec do_connect(string(), uds_options()) -> {ok, integer()} | {error, any()}.
 do_connect(Filename, Options) when is_list(Filename), is_list(Options) ->
@@ -158,35 +150,98 @@ do_connect(Filename, Options) when is_list(Filename), is_list(Options) ->
 do_bind(Filename, Options) when is_list(Filename), is_list(Options) ->
     erlang:nif_error(not_implemented).
 
+-spec do_send(integer(), binary()) -> ok | {error, any()}.
+do_send(FD, Data) when is_integer(FD), is_binary(Data) ->
+    erlang:nif_error(not_implemented).
+    
+-spec do_close(integer()) -> ok.
 do_close(FD) when is_integer(FD) ->
     erlang:nif_error(not_implemented).
     
+%%%----------------------------------------------------------------------------
+%%% Internal functions
+%%%----------------------------------------------------------------------------
+split_opts(Options) ->
+    lists:partition(fun
+        (stream)    -> true;
+        (dgram)     -> true;
+        (reuseaddr) -> true;
+        ({reuseaddr,V}) when is_boolean(V) -> true;
+        (_)         -> false
+    end, Options).
+
+mf(Action, Options) ->
+    case {lists:member(dgram, Options), Action} of
+    {true,   listen} -> {gen_udp, open};
+    {true,  connect} -> {gen_udp, fdopen};
+    {false,  listen} -> {gen_tcp, listen};
+    {false, connect} -> {gen_tcp, fdopen}
+    end.
+
 %%%----------------------------------------------------------------------------
 %%% Test functions
 %%%----------------------------------------------------------------------------
 
 -ifdef(TEST).
-gen_uds_test() ->
+
+uds_tcp_test() ->
     File = "/tmp/test_euds.sock",
     Pid  = self(),
     CPid = spawn_link(fun() ->
-        receive ready -> ok
-        after   10000 -> exit(timeout)
-        end,
-        {ok, S} = gen_uds:connect(File, [{type, stream}]),
+        ?assertEqual(ok, receive ready -> ok after 10000 -> timeout end),
+        {ok, S} = gen_uds:connect(File, [stream]),
         gen_tcp:send(S, <<"abc">>),
-        ?assertEqual(ok, gen_uds:close(S)),
+        timer:sleep(10), % Prevent both packets from being merged in one
+        gen_tcp:send(S, <<"efg">>),
+        ?assertEqual(ok, gen_tcp:close(S)),
         Pid ! {client, ok}
     end),
     spawn_link(fun() ->
         file:delete(File),
-        {ok, S}  = gen_uds:listen(File, [{type, stream}]),
+        {ok, S}  = gen_uds:listen(File, [stream]),
         CPid ! ready,
-        {ok, CS} = gen_uds:accept(S),
+        {ok, CS} = gen_tcp:accept(S),
+        inet:setopts(CS, [{active, once}]),
+        ?assertMatch({tcp, _Port, "abc"},
+            receive Msg -> Msg after 3000 -> timeout end),
         inet:setopts(CS, [{active, false}]),
-        {ok, "abc"} = gen_tcp:recv(CS, 0),
-        ?assertEqual(ok, gen_uds:close(CS)),
-        ?assertEqual(ok, gen_uds:close(S)),
+        ?assertEqual({ok, "efg"}, gen_tcp:recv(CS, 0)),
+        ?assertEqual(ok, gen_tcp:close(CS)),
+        ?assertEqual(ok, gen_tcp:close(S)),
+        Pid  ! {server, ok}
+    end),
+
+    receive {server, ok} -> ok
+    after   5000         -> throw(no_response_from_server)
+    end,
+
+    receive {client, ok} -> ok
+    after   5000         -> throw(no_response_from_client)
+    end.
+
+uds_udp_test() ->
+    File = "/tmp/test_euds.sock",
+    Pid  = self(),
+    CPid = spawn_link(fun() ->
+        ?assertEqual(ok, receive ready -> ok after 10000 -> timeout end),
+        {ok, S} = gen_uds:connect(File, [dgram]),
+        gen_uds:send(S, <<"abc">>),
+        gen_uds:send(S, <<"efg">>),
+        ?assertEqual(ok, gen_udp:close(S)),
+        Pid ! {client, ok}
+    end),
+    spawn_link(fun() ->
+        file:delete(File),
+        {ok, S}  = gen_uds:listen(File, [dgram]),
+        CPid ! ready,
+        % Active socket test
+        inet:setopts(S, [{active, once}]),
+        ?assertMatch({udp, _Port, File, 0, "abc"},
+            receive Msg -> Msg after 3000 -> timeout end),
+        % Passive socket test
+        inet:setopts(S, [{active, false}]),
+        ?assertEqual({ok, {File, 0, "efg"}}, gen_udp:recv(S, 0, 3000)),
+        ?assertEqual(ok, gen_udp:close(S)),
         Pid  ! {server, ok}
     end),
 
