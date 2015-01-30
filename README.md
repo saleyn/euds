@@ -35,7 +35,7 @@ Serge Aleynikov &lt;saleyn at gmail dot com&gt;
 ok
 2> {ok, S} = gen_uds:listen("/tmp/test.sock", [stream]).
 {ok,#Port<0.980>}
-3> {ok, CS} = gen_uds:accept(S).
+3> {ok, CS} = gen_tcp:accept(S).
 {ok,#Port<0.981>}
 4> inet:setopts(CS, [{active, false}]).
 ok
@@ -49,7 +49,7 @@ ok
 % TCP Unix Domain Socket Client:
 1> {ok, S} = gen_uds:connect("/tmp/test.sock", [stream]).
 {ok,#Port<0.949>}
-2> gen_tcp:send(S, <<"abc">>).
+2> gen_tcp:send(S, "abc").
 ok
 3> gen_tcp:close(S).
 ok
@@ -76,11 +76,11 @@ ok
 % UDP Unix Domain Socket Client:
 1> {ok, S} = gen_uds:connect("/tmp/test.sock", [dgram]).
 {ok,#Port<0.949>}
-2> gen_tcp:send(S, <<"abc">>).
+2> gen_udp:send(S, "abc").
 ok
-3> gen_tcp:send(S, <<"efg">>).
+3> gen_udp:send(S, "efg").
 ok
-4> gen_tcp:close(S).
+4> gen_udp:close(S).
 ok
 ```
 
