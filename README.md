@@ -15,14 +15,15 @@ to erlang-patches@erlang.org mailing list for review.
 
 ## Author ##
 
-Serge Aleynikov <saleyn at gmail dot com>
+Serge Aleynikov &lt;saleyn at gmail dot com&gt;
 
 ## Installation: ##
 
 1. Apply the following patch to the latest Erlang release:
    https://github.com/saleyn/otp/compare/uds.patch
-2. git clone https://github.com/saleyn/euds.git
-3. make
+2. Ensure you have a local installation of `rebar`.
+3. git clone https://github.com/saleyn/euds.git
+4. make
 
 ## Usage: ##
 
