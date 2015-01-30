@@ -1,0 +1,34 @@
+
+= Erlang Unix Domain Socket =
+
+@author Serge Aleynikov <saleyn at gmail dot com>
+@version {@vsn}
+@title Erlang Unix Domain Socket (UDS)
+
+@doc This application implements a UDS socket support in Erlang
+
+It's designed to address the shortcomings of Erlang's network interface
+modules that don't provide support for UDS sockets out of the box.
+
+== Download ==
+
+<ul>
+<li>Project's repository: [https://github.com/saleyn/euds]</li>
+<li>Git clone command: `git clone https://github.com/saleyn/euds.git'</li>
+<li>Documentation: http://saleyn.github.com/euds</li>
+</ul>
+
+== Installation ==
+
+1. Apply the following patch to the latest Erlang release:
+   https://github.com/saleyn/otp/compare/uds.patch
+2. Ensure you have a local installation of `rebar`.
+3. git clone https://github.com/saleyn/euds.git
+4. make
+
+== Example ==
+
+1. See https://github.com/saleyn/euds/blob/master/README.md
+2. See the test cases in https://github.com/saleyn/euds/blob/master/src/gen_uds.erl
+
+@end
