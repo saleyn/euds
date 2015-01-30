@@ -31,6 +31,6 @@ modules that don't provide support for UDS sockets out of the box.
 == Example ==
 
 <li>See [https://github.com/saleyn/euds/blob/master/README.md]</li>
-<li>See the test cases in [https://github.com/saleyn/euds/blob/master/src/gen_uds.erl]</li>
+<li>See the test cases in [https://github.com/saleyn/euds/blob/master/src/gen_uds.erl#L187]</li>
 
 @end
