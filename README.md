@@ -11,7 +11,8 @@ existing Erlang send/receive API on file descriptors set up externally.
 Note: there is a bug in the OTP socket management which requires the Erlang
 distribution to be patched in order for this project to work. The patch can
 be found here: https://github.com/saleyn/otp/compare/uds.  It was submitted
-to erlang-patches@erlang.org mailing list for review.
+in the form of a pull request to the Erlang/OTP team:
+https://github.com/erlang/otp/pull/612.
 
 ## Author ##
 

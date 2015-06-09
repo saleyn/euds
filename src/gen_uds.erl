@@ -183,8 +183,8 @@ mf(Action, Options) ->
 %%%----------------------------------------------------------------------------
 
 -ifdef(TEST).
--define(assertReceive(Term, Timeout),
-    ?assertMatch(ok, receive Term -> ok after Timeout -> timeout end)).
+%-define(assertReceive(Term, Timeout),
+%    ?assertMatch(ok, receive Term -> ok after Timeout -> timeout end)).
 
 uds_tcp_test() ->
     File = "/tmp/test_euds.sock",

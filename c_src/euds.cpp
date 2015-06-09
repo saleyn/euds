@@ -119,11 +119,16 @@ static int sock_open(ErlNifEnv* env, ERL_NIF_TERM list) {
     if (fd < 0)
         return fd;
 
-    if (reuse && setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-        int err = errno;
-        close(fd);
-        errno = err;
-        return -1;
+    if (reuse) {
+        int       opt = reuse;
+        socklen_t len = sizeof(opt);
+        int       rc  = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, len);
+        if (rc < 0) {
+            int err = errno;
+            close(fd);
+            errno = err;
+            return -1;
+        }
     }
 
     return fd;
@@ -174,10 +179,9 @@ static ERL_NIF_TERM sock_bind(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     addr.sun_family = AF_UNIX;
     snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
 
-    if (bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) < 0)
-        return enif_make_tuple2(env, am_error, describe_error(env, errno));
-
-    return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
+    return (bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) < 0)
+        ? enif_make_tuple2(env, am_error, describe_error(env, errno))
+        : enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
 }
 
 static ERL_NIF_TERM sock_send(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
