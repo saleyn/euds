@@ -13,7 +13,7 @@
 -on_load(init/0).
 
 %% API
--export([init/0, connect/2, listen/2, close/1, send/2]).
+-export([init/0, connect/2, connect/3, connect/4, listen/2, close/1, send/2]).
 -export([accept/1, accept/2, async_accept/1, set_sockopt/2]).
 
 -ifdef(TEST).
@@ -71,6 +71,14 @@ connect(Filename, Options) when is_list(Filename), is_list(Options) ->
         Error
     end.
 
+%% @doc Method provided for compatibility with gen_tcp:connect/3
+connect(Filename, _Port, Options) ->
+    connect(Filename, Options).
+
+%% @doc Method provided for compatibility with gen_tcp:connect/4
+connect(Filename, _Port, Options, _Timeout) ->
+    connect(Filename, Options).
+    
 %% @doc Sets up a UNIX Domain socket to listen on the `Filename' on the local host.
 %%      See `gen_tcp:listen/2' and `inet:setopts/2' for a list of available options.
 -spec listen(string(), listen_options()) -> {ok, gen_uds:socket()} | {error, any()}.
