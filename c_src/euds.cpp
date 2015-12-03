@@ -49,11 +49,22 @@ static ERL_NIF_TERM am_false;
 static ERL_NIF_TERM am_stream;
 static ERL_NIF_TERM am_dgram;
 static ERL_NIF_TERM am_reuseaddr;
+static ERL_NIF_TERM am_timeout;
 
 static ERL_NIF_TERM sock_connect(ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sock_bind   (ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sock_send   (ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
 static ERL_NIF_TERM sock_close  (ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM sock_send_fd(ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM sock_recv_fd(ErlNifEnv*, int argc, const ERL_NIF_TERM argv[]);
+
+namespace
+{
+	struct sock_ancil_data {
+      struct cmsghdr h;
+      int            fd[1];
+    };
+}
 
 bool decode_flags(ErlNifEnv* env, ERL_NIF_TERM list, bool& stream, bool& reuse)
 {
@@ -212,6 +223,76 @@ static ERL_NIF_TERM sock_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     return am_ok;
 }
 
+static ERL_NIF_TERM sock_send_fd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    int fd;
+    int sendfd;
+
+    if (argc != 2 ||
+        !enif_get_int(env, argv[0], &fd) ||
+        !enif_get_int(env, argv[1], &sendfd))
+        return enif_make_badarg(env);
+
+    sock_ancil_data buf;
+    struct msghdr   msghdr;
+    char            nothing = '!';
+    struct iovec    nothing_ptr = {&nothing, 1};
+    struct cmsghdr* cmsg;
+
+
+    msghdr.msg_name        = NULL;
+    msghdr.msg_namelen     = 0;
+    msghdr.msg_iov         = &nothing_ptr;
+    msghdr.msg_iovlen      = 1;
+    msghdr.msg_flags       = 0;
+    msghdr.msg_control     = &buf;
+    msghdr.msg_controllen  = sizeof(struct cmsghdr) + sizeof(int);
+    cmsg = CMSG_FIRSTHDR(&msghdr);
+    cmsg->cmsg_len         = msghdr.msg_controllen;
+    cmsg->cmsg_level       = SOL_SOCKET;
+    cmsg->cmsg_type        = SCM_RIGHTS;
+    *(int*)CMSG_DATA(cmsg) = sendfd;
+    if (sendmsg(fd, &msghdr, 0) < 0)
+        return enif_make_tuple2(env, am_error, describe_error(env, errno));
+
+    return am_ok;
+}
+
+static ERL_NIF_TERM sock_recv_fd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    int fd;
+
+    if (argc != 1 ||
+        !enif_get_int(env, argv[0], &fd))
+        return enif_make_badarg(env);
+
+    sock_ancil_data buf;
+    struct msghdr   msghdr;
+    char            nothing;
+    struct iovec    nothing_ptr = {&nothing, 1};
+    struct cmsghdr* cmsg;
+
+    msghdr.msg_name        = NULL;
+    msghdr.msg_namelen     = 0;
+    msghdr.msg_iov         = &nothing_ptr;
+    msghdr.msg_iovlen      = 1;
+    msghdr.msg_flags       = 0;
+    msghdr.msg_control     = &buf;
+    msghdr.msg_controllen  = sizeof(struct cmsghdr) + sizeof(int);
+    cmsg = CMSG_FIRSTHDR(&msghdr);
+    cmsg->cmsg_len         = msghdr.msg_controllen;
+    cmsg->cmsg_level       = SOL_SOCKET;
+    cmsg->cmsg_type        = SCM_RIGHTS;
+    *(int*)CMSG_DATA(cmsg) = -1;
+
+    if (recvmsg(fd, &msghdr, MSG_DONTWAIT) < 0)
+		return errno == EAGAIN
+            ? am_timeout
+            : enif_make_tuple2(env, am_error, describe_error(env, errno));
+
+    int recvfd = *(int*)CMSG_DATA(cmsg);
+
+    return enif_make_tuple2(env, am_ok, enif_make_int(env, recvfd));
+}
+
 static int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
 {
     am_ok        = enif_make_atom(env, "ok");
@@ -221,6 +302,7 @@ static int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     am_stream    = enif_make_atom(env, "stream");
     am_dgram     = enif_make_atom(env, "dgram");
     am_reuseaddr = enif_make_atom(env, "reuseaddr");
+    am_timeout   = enif_make_atom(env, "timeout");
     return 0;
 }
 
@@ -232,7 +314,8 @@ static ErlNifFunc nif_funcs[] = {
     {"do_bind",    2, sock_bind},
     {"do_send",    2, sock_send},
     {"do_close",   1, sock_close},
+    {"do_send_fd", 2, sock_send_fd},
+    {"do_recv_fd", 1, sock_recv_fd},
 };
 
 ERL_NIF_INIT(gen_uds, nif_funcs, &on_load, &on_reload, &on_upgrade, NULL)
-

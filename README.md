@@ -8,6 +8,9 @@ a socket, and then Erlang implementation assigns an open file descriptor
 to either `gen_tcp` or `gen_udp` Erlang socket. This allows to reuse
 existing Erlang send/receive API on file descriptors set up externally.
 
+Additionally this NIF library has functions `send_fd/2` and `recv_fd/1` do
+send and receive file descriptors through a Unix Domain Socket.
+
 Note: there is a bug in the OTP socket management which requires the Erlang
 distribution to be patched in order for this project to work. The patch can
 be found here: https://github.com/saleyn/otp/compare/uds.  It was submitted

@@ -13,7 +13,8 @@
 -on_load(init/0).
 
 %% API
--export([init/0, connect/2, connect/3, connect/4, listen/2, close/1, send/2]).
+-export([init/0, connect/2, connect/3, connect/4, listen/2, close/1,
+         send/2, send_fd/2, recv_fd/1]).
 -export([accept/1, accept/2, async_accept/1, set_sockopt/2]).
 
 -ifdef(TEST).
@@ -95,11 +96,23 @@ listen(Filename, Options) when is_list(Filename), is_list(Options) ->
         Error
     end.
 
-%% @doc Close a UDS socket.
+%% @doc Send binary data to a UDS socket.
 -spec send(gen_uds:socket(), binary()) -> ok.
 send(Sock, Data) when is_port(Sock), is_binary(Data) ->
     {ok, FD} = inet:getfd(Sock),
     do_send(FD, Data).
+
+%% @doc Send a file descriptor to a UDS socket.
+-spec send_fd(gen_uds:socket(), binary()) -> ok | {error, any()}.
+send_fd(Sock, SendFD) when is_port(Sock), is_integer(SendFD) ->
+    {ok, FD} = inet:getfd(Sock),
+    do_send_fd(FD, SendFD).
+
+%% @doc Send a file descriptor to a UDS socket.
+-spec recv_fd(gen_uds:socket()) -> ok | timeout | {error, any()}.
+recv_fd(Sock) when is_port(Sock) ->
+    {ok, FD} = inet:getfd(Sock),
+    do_recv_fd(FD).
 
 %% @doc Close a UDS socket.
 -spec close(gen_uds:socket()) -> ok.
@@ -166,6 +179,14 @@ do_send(FD, Data) when is_integer(FD), is_binary(Data) ->
 do_close(FD) when is_integer(FD) ->
     erlang:nif_error(not_implemented).
     
+-spec do_send_fd(integer(), integer()) -> ok | {error, any()}.
+do_send_fd(FD, SendFD) when is_integer(FD), is_integer(SendFD) ->
+    erlang:nif_error(not_implemented).
+
+-spec do_recv_fd(integer()) -> {ok, FD::integer()} | timeout | {error, any()}.
+do_recv_fd(FD) when is_integer(FD) ->
+    erlang:nif_error(not_implemented).
+
 %%%----------------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------------
