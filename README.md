@@ -17,6 +17,12 @@ be found here: https://github.com/saleyn/otp/compare/uds.  It was submitted
 in the form of a pull request to the Erlang/OTP team:
 https://github.com/erlang/otp/pull/612.
 
+Once the above-stated patch is applied, rebuild the OTP distribution, and
+check that `erts/preloaded/src/*.erl` have been compiled into
+`erts/preloaded/ebin/*.beam` (note that the `Makefile` in that directory
+tends to place compiled files in the same directory where the sources are
+instead of placing them in `ebin/`.
+
 ## Author ##
 
 Serge Aleynikov &lt;saleyn at gmail dot com&gt;
