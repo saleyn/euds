@@ -109,7 +109,7 @@ send_fd(Sock, SendFD) when is_port(Sock), is_integer(SendFD) ->
     do_send_fd(FD, SendFD).
 
 %% @doc Send a file descriptor to a UDS socket.
--spec recv_fd(gen_uds:socket()) -> ok | timeout | {error, any()}.
+-spec recv_fd(gen_uds:socket()) -> {ok, integer()} | timeout | {error, any()}.
 recv_fd(Sock) when is_port(Sock) ->
     {ok, FD} = inet:getfd(Sock),
     do_recv_fd(FD).

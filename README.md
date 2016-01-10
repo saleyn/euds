@@ -87,5 +87,3 @@ ok
 4> gen_udp:close(S).
 ok
 ```
-
-
