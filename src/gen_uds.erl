@@ -116,8 +116,14 @@ recv_fd(Sock) when is_port(Sock) ->
 
 %% @doc Close a UDS socket.
 -spec close(gen_uds:socket()) -> ok.
-close(Sock) ->
-    gen_tcp:close(Sock).
+close(Sock) when is_port(Sock) ->
+    case inet:getfd(Sock) of
+    {ok, FD} -> close(FD);
+    _        -> ok
+    end,
+    gen_tcp:close(Sock);
+close(FD)   when is_integer(FD) ->
+    do_close(FD).
 
 %% @doc Accepts an incoming connection request on a listen socket. Socket must be a
 %%      socket returned from `listen/3'.  This function blocks indefinitely until a
