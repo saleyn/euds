@@ -8,6 +8,12 @@ a socket, and then Erlang implementation assigns an open file descriptor
 to either `gen_tcp` or `gen_udp` Erlang socket. This allows to reuse
 existing Erlang send/receive API on file descriptors set up externally.
 
+From the academic point of view TCP and UDP protocols are not implemented
+over Unix Domain Sockets (UDS).  Rather, UDS use stream and datagram
+transports that have identical library API to TCP and UDP. For this reason
+a UDS file descriptor can be passed to `gen_tcp` or `gen_udp` to handle
+`stream` or `dgram` communications.
+
 Additionally this NIF library has functions `send_fd/2` and `recv_fd/1` do
 send and receive file descriptors through a Unix Domain Socket.
 
