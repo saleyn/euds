@@ -17,10 +17,8 @@ be found here: https://github.com/saleyn/otp/compare/uds.  It was submitted
 in the form of a pull request to the Erlang/OTP team:
 https://github.com/erlang/otp/pull/612.
 
-See (these
-    instructions)[http://www.erlang.org/doc/installation_guide/INSTALL.html#Advanced-configuration-and-build-of-ErlangOTP_Building_How-to-Build-a-Debug-Enabled-Erlang-RunTime-System]
-if you need to debug the Erlang's `inet_drv.c`
-network driver.
+See [these instructions](http://www.erlang.org/doc/installation_guide/INSTALL.html#Advanced-configuration-and-build-of-ErlangOTP_Building_How-to-Build-a-Debug-Enabled-Erlang-RunTime-System)
+if you need to debug the Erlang's `inet_drv.c` network driver.
 
 ### Important ###
 Once the above-stated patch is applied, rebuild the OTP distribution, and
