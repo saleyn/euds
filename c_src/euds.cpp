@@ -109,6 +109,7 @@ static ERL_NIF_TERM describe_error(ErlNifEnv* env, int err) {
         case ENETUNREACH:   return enif_make_atom(env, "enetunreach");
         case ENOTSOCK:      return enif_make_atom(env, "enotsock");
         case ETIMEDOUT:     return enif_make_atom(env, "etimedout");
+        case EMFILE:        return enif_make_atom(env, "emfile"); // Too many open files
         default:            return enif_make_int (env, err);
     }
 }
