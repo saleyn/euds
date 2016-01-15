@@ -167,8 +167,11 @@ static ERL_NIF_TERM sock_connect(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
     addr.sun_family = AF_UNIX;
     snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
-    if (connect(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)))
-        return enif_make_tuple2(env, am_error, describe_error(env, errno));
+    if (connect(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un))) {
+        int ec = errno;
+        ::close(fd);
+        return enif_make_tuple2(env, am_error, describe_error(env, ec));
+    }
 
     return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
 }
