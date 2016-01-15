@@ -101,6 +101,7 @@ static ERL_NIF_TERM describe_error(ErlNifEnv* env, int err) {
         case EALREADY:      return enif_make_atom(env, "ealready");
         case EBADF:         return enif_make_atom(env, "ebadf");
         case ECONNREFUSED:  return enif_make_atom(env, "econnrefused");
+        case ECONNRESET:    return enif_make_atom(env, "econnreset");
         case EFAULT:        return enif_make_atom(env, "efault");
         case EINPROGRESS:   return enif_make_atom(env, "einprogress");
         case EINVAL:        return enif_make_atom(env, "einval");
