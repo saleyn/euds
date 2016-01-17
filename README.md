@@ -31,7 +31,7 @@ Once the above-stated patch is applied, rebuild the OTP distribution, and
 check that `erts/preloaded/src/*.erl` have been compiled into
 `erts/preloaded/ebin/*.beam` (note that the `Makefile` in that directory
 tends to place compiled files in the same directory where the sources are
-instead of placing them in `ebin/` (see this closed issue that illustrates
+instead of creating them in `ebin/` (see this closed issue that illustrates
 this solution: https://github.com/saleyn/euds/issues/1).
 
 ## Author ##

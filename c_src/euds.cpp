@@ -195,9 +195,11 @@ static ERL_NIF_TERM sock_bind(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     addr.sun_family = AF_UNIX;
     snprintf(addr.sun_path, sizeof(addr.sun_path) -1 , "%s", path);
 
-    return (bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) < 0)
-        ? enif_make_tuple2(env, am_error, describe_error(env, errno))
-        : enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) < 0) {
+        ::close(fd);
+        return enif_make_tuple2(env, am_error, describe_error(env, errno));
+    }
+    return enif_make_tuple2(env, am_ok, enif_make_int(env, fd));
 }
 
 static ERL_NIF_TERM sock_send(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
