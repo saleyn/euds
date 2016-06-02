@@ -3,6 +3,9 @@ Erlang Unix Domain Socket (euds)
 
 This project implements a NIF library to support Unix Domain Sockets.
 
+*UPDATE: this project will be deprecated beginning with Erlang 19RC1, which
+will include native support for Unix Domain Sockets.*
+
 The implementation uses two C functions (`do_bind`, `do_connect`) to setup
 a socket, and then Erlang implementation assigns an open file descriptor
 to either `gen_tcp` or `gen_udp` Erlang socket. This allows to reuse
